@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Telefon Kamera → AI Kuzatuv</title>
+<style>
+  body { font-family: system-ui, sans-serif; background:#111; color:#eee; text-align:center; padding:16px; }
+  video { width:100%; max-width:480px; border-radius:12px; border:2px solid #444; }
+  input, button { padding:10px; font-size:16px; margin:6px; border-radius:8px; border:1px solid #555; }
+  button { background:#2d7dfa; color:#fff; border:none; cursor:pointer; }
+  #log { text-align:left; max-width:480px; margin:16px auto; font-size:13px; background:#1b1b1b; padding:10px; border-radius:8px; max-height:200px; overflow:auto; }
+</style>
+</head>
+<body>
+  <h2>📷 Telefon Kamera → AI Kuzatuv</h2>
+
+  <label>Server manzili (Render URL):</label><br>
+  <input id="serverUrl" type="text" placeholder="https://sizning-app.onrender.com" style="width:90%"><br>
+  <script>document.getElementById('serverUrl').value = window.location.origin;</script>
+
+  <label>Kamera nomi:</label><br>
+  <input id="cameraId" type="text" value="telefon_1"><br>
+
+  <label>Necha soniyada bir rasm yuborilsin:</label><br>
+  <input id="interval" type="number" value="5" style="width:60px"><br><br>
+
+  <video id="video" autoplay playsinline muted></video><br>
+  <canvas id="canvas" style="display:none"></canvas>
+
+  <button onclick="start()">▶️ Boshlash</button>
+  <button onclick="stop()">⏹ To'xtatish</button>
+
+  <div id="log">Log bu yerda ko'rinadi...</div>
+
+<script>
+let stream = null;
+let timer = null;
+
+async function start() {
+  const video = document.getElementById('video');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }, // orqa kamera
+      audio: false
+    });
+    video.srcObject = stream;
+    log("Kamera ishga tushdi ✅");
+  } catch (e) {
+    log("XATO: kameraga ruxsat berilmadi yoki topilmadi: " + e);
+    return;
+  }
+
+  const seconds = parseInt(document.getElementById('interval').value) || 5;
+  timer = setInterval(sendFrame, seconds * 1000);
+}
+
+function stop() {
+  if (timer) clearInterval(timer);
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  log("To'xtatildi ⏹");
+}
+
+function sendFrame() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  canvas.width = 640;
+  canvas.height = video.videoHeight / video.videoWidth * 640;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  canvas.toBlob(async (blob) => {
+    const serverUrl = document.getElementById('serverUrl').value.replace(/\/$/, '');
+    const cameraId = document.getElementById('cameraId').value;
+    if (!serverUrl) { log("Server manzilini kiriting!"); return; }
+
+    const formData = new FormData();
+    formData.append('camera_id', cameraId);
+    formData.append('file', blob, 'frame.jpg');
+
+    try {
+      const res = await fetch(serverUrl + '/frame', { method: 'POST', body: formData });
+      const data = await res.json();
+      log(JSON.stringify(data));
+    } catch (e) {
+      log("Yuborishda xato: " + e);
+    }
+  }, 'image/jpeg', 0.7);
+}
+
+function log(msg) {
+  const el = document.getElementById('log');
+  const time = new Date().toLocaleTimeString();
+  el.innerHTML = `[${time}] ${msg}<br>` + el.innerHTML;
+}
+</script>
+</body>
+</html>
