@@ -118,10 +118,17 @@ def save_event(camera_id: str, tavsif: str):
 def home():
     return """
     <h2>Kamera AI Kuzatuv Tizimi ishlayapti ✅</h2>
+    <p>Telefon kamerasini ulash uchun: <a href="/kamera">/kamera</a> sahifasini oching</p>
     <p>Rasm yuborish: POST /frame (multipart form: camera_id, file)</p>
     <p>So'rov: GET /ask?savol=oxirgi 1 soatda nima bo'ldi</p>
     <p>Barcha voqealar: GET /voqealar</p>
     """
+
+
+@app.get("/kamera", response_class=HTMLResponse)
+def kamera_page():
+    with open(os.path.join(os.path.dirname(__file__), "telefon_kamera.html"), "r", encoding="utf-8") as f:
+        return f.read()
 
 
 @app.post("/frame")
