@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: kamera-ai-kuzatuv
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: MOTION_THRESHOLD
+        value: "12.0"
+      - key: MIN_SECONDS_BETWEEN_CALLS
+        value: "8"
